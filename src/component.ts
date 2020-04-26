@@ -1,4 +1,3 @@
-import { observable } from "./observable";
 import { makeAddListener, error } from "./utils";
 
 interface IComponentProps<T> {
@@ -8,7 +7,7 @@ interface IComponentProps<T> {
   afterInit?: LifeCycleMethod<T>;
   beforeDestroy?: LifeCycleMethod<T>;
   events: Record<string, Function>;
-  setup: LifeCycleMethod<T>;
+  setup: ({ elements }: { elements: IElementsMap }) => any;
   [key: string]: any;
 }
 
@@ -31,15 +30,12 @@ export const component = <
 >({
   root,
   elements: elementsSelectors,
-  initialState,
   afterInit,
   beforeDestroy,
   events,
   setup
 }: IComponentProps<T>) => {
   const [addListener, removeAllListeners] = makeAddListener();
-
-  const state = observable(initialState);
 
   const rootElement =
     typeof root === "string" ? document.querySelector(root) : root;
@@ -48,41 +44,51 @@ export const component = <
     error("can not find root element");
   }
 
-  const elements = Object.entries(elementsSelectors).reduce(
-    (acc, [name, selector]) => {
+  let state: T;
+  let elements: IElementsMap;
+
+  const init = () => {
+    elements = getElements();
+    state = setup({ elements });
+    attachEvents();
+    afterInit && afterInit({ state, elements });
+  };
+
+  const getElements = () => {
+    return Object.entries(elementsSelectors).reduce((acc, [name, selector]) => {
       const element = document.querySelector(selector)!;
 
       acc[name] = element;
 
       return acc;
-    },
-    {} as IElementsMap
-  );
+    }, {} as IElementsMap);
+  };
 
-  setup({ elements, state });
+  const attachEvents = () => {
+    Object.entries(events).forEach(([key, value]) => {
+      const eventHandlerMatch = key.match(eventRegex);
+      if (eventHandlerMatch) {
+        const [, event, element] = eventHandlerMatch;
 
-  Object.entries(events).forEach(([key, value]) => {
-    const eventHandlerMatch = key.match(eventRegex);
-    if (eventHandlerMatch) {
-      const [, event, element] = eventHandlerMatch;
-
-      if (!elements[element]) {
-        error(
-          `can not set ${event} event on ${element}. ${element} is undefined`
-        );
+        if (!elements[element]) {
+          error(
+            `can not set ${event} event on ${element}. ${element} is undefined`
+          );
+        }
+        addListener(elements[element], event, e => value(e, state));
       }
-      addListener(elements[element], event, e => value(e, state));
-    }
-  });
-
-  afterInit && afterInit({ state, elements });
+    });
+  };
 
   const destroy = () => {
     beforeDestroy && beforeDestroy({ state, elements });
     removeAllListeners();
   };
 
+  init();
+
   return {
+    init,
     destroy
   };
 };

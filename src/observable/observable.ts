@@ -1,13 +1,14 @@
 import { runningReactions } from "./observer";
+import { isObject } from "../utils";
 
 type AnyObject = Record<string, any>;
 
 const rawToProxy = new WeakMap();
 const proxyToRaw = new WeakMap();
 
-export const observable = <T extends AnyObject = AnyObject>(target: T) => {
-  if (proxyToRaw.has(target)) return target;
-  return (proxyToRaw.get(target) as T) || createObservable(target);
+export const observable = <T extends AnyObject = AnyObject>(raw: T) => {
+  if (proxyToRaw.has(raw)) return raw;
+  return (rawToProxy.get(raw) as T) || createObservable(raw);
 };
 
 const createObservable = <T extends AnyObject>(target: T) => {
@@ -22,19 +23,19 @@ const createObservable = <T extends AnyObject>(target: T) => {
 };
 
 const addPropertyToObservable = <T extends AnyObject, K>(
-  observable: T,
-  prop: string,
+  target: T,
+  key: string,
   value: K
 ) => {
-  const reactions = new Set<Function>();
   let currentValue = value;
+  const reactions = new Set<Function>();
 
-  Object.defineProperty(observable, prop, {
+  Object.defineProperty(target, key, {
     get() {
       const currentlyRunningReaction =
         runningReactions[runningReactions.length - 1];
       currentlyRunningReaction && reactions.add(currentlyRunningReaction);
-      return currentValue;
+      return isObject(currentValue) ? observable(currentValue) : currentValue;
     },
     set(newValue) {
       currentValue = newValue;
@@ -42,5 +43,5 @@ const addPropertyToObservable = <T extends AnyObject, K>(
     }
   });
 
-  return observable;
+  return target;
 };

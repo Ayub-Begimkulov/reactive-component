@@ -1,18 +1,13 @@
 import { observable, observe } from "./observable";
 import { component } from "./component";
 
-const obj = observable({ a: 2, hello: "world" });
-
-// @ts-ignore
-window.o = obj;
-
-observe(() => {
-  console.log("from observable", obj.hello);
-});
-
 interface IAppState {
   text: string;
   count: number;
+  user: {
+    name: string;
+    age: number;
+  };
 }
 
 // @ts-ignore
@@ -21,15 +16,19 @@ const app = component<IAppState>({
   elements: {
     input: "#input",
     text: "#text",
-    div: "#div",
     button: "#btn",
     count: "#count"
   },
-  initialState: {
-    text: "hello world",
-    count: 0
-  },
-  setup({ elements, state }) {
+  setup({ elements }) {
+    const state = observable({
+      text: "hello world",
+      count: 0,
+      user: {
+        name: "hello",
+        age: 16
+      }
+    });
+
     const { text, count } = elements;
 
     observe(() => {
@@ -39,6 +38,13 @@ const app = component<IAppState>({
     observe(() => {
       count.textContent = `${state.count}`;
     });
+
+    observe(() => {
+      // @TODO make a reactions resetting for nested objects
+      console.log(state.user.name);
+    });
+
+    return state as IAppState;
   },
   afterInit({ elements, state }) {
     console.log(state, elements);
@@ -48,7 +54,9 @@ const app = component<IAppState>({
   },
   events: {
     "input on input"(e: Event, state: IAppState) {
-      state.text = (e.target as HTMLInputElement).value;
+      const value = (e.target as HTMLInputElement).value;
+      state.text = value;
+      state.user.name = value;
     },
     "click on button"(_e: Event, state: IAppState) {
       state.count++;
