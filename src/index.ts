@@ -57,6 +57,14 @@ const app = component<IState>({
     // also it's may be better to declare event handlers
     // in setup function and use event object as a map
     // with same key but with value as method name
+    // setup({elements}) {
+    //   const onClick = () => {...}
+    //   return {..., onClick}
+    // },
+    // ...
+    // events: {
+    //   "click on div": "onClick"
+    // }
     "input on input"(e, state) {
       const value = (e.target as HTMLInputElement).value;
       state.user.name = value;
