@@ -49,13 +49,16 @@ export const component = <T>({
   };
 
   const getElements = () => {
-    return Object.entries(elementsSelectors).reduce((acc, [name, selector]) => {
-      const element = document.querySelector(selector);
-      if (element) {
-        acc[name] = element;
-      }
-      return acc;
-    }, {} as IElementsMap);
+    return Object.entries(elementsSelectors).reduce(
+      (acc, [name, selector]) => {
+        const element = document.querySelector(selector);
+        if (element) {
+          acc[name] = element;
+        }
+        return acc;
+      },
+      { root } as IElementsMap
+    );
   };
 
   const attachEvents = () => {
