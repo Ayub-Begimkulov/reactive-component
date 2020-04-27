@@ -1,7 +1,7 @@
 import { observable, observe } from "./observable";
 import { component } from "./component";
 
-interface IAppState {
+interface IState {
   text: string;
   count: number;
   user: {
@@ -10,8 +10,7 @@ interface IAppState {
   };
 }
 
-// @ts-ignore
-const app = component<IAppState>({
+const app = component<IState>({
   root: "#app",
   elements: {
     input: "#input",
@@ -44,22 +43,21 @@ const app = component<IAppState>({
       console.log(state.user.name);
     });
 
-    return state as IAppState;
-  },
-  afterInit({ elements, state }) {
-    console.log(state, elements);
+    return state;
   },
   beforeDestroy({ elements, state }) {
     console.log(state, elements);
   },
   events: {
-    "input on input"(e: Event, state: IAppState) {
+    "input on input"(e, state) {
       const value = (e.target as HTMLInputElement).value;
       state.text = value;
       state.user.name = value;
     },
-    "click on button"(_e: Event, state: IAppState) {
+    "click on button"(_e, state) {
       state.count++;
     }
   }
 });
+
+console.log(app);

@@ -3,11 +3,9 @@ import { makeAddListener, error } from "./utils";
 interface IComponentProps<T> {
   root: Element | string;
   elements: Record<string, string>;
-  initialState: T;
-  afterInit?: LifeCycleMethod<T>;
   beforeDestroy?: LifeCycleMethod<T>;
-  events: Record<string, Function>;
-  setup: ({ elements }: { elements: IElementsMap }) => any;
+  events: Record<string, (e: Event, state: T) => void>;
+  setup: ({ elements }: { elements: IElementsMap }) => T;
   [key: string]: any;
 }
 
@@ -25,12 +23,9 @@ type LifeCycleMethod<T> = ({
 
 const eventRegex = /(\w+)\s+on\s+(\w+)/;
 
-export const component = <
-  T extends { [key: string]: any } = { [key: string]: any }
->({
+export const component = <T>({
   root,
   elements: elementsSelectors,
-  afterInit,
   beforeDestroy,
   events,
   setup
@@ -51,15 +46,14 @@ export const component = <
     elements = getElements();
     state = setup({ elements });
     attachEvents();
-    afterInit && afterInit({ state, elements });
   };
 
   const getElements = () => {
     return Object.entries(elementsSelectors).reduce((acc, [name, selector]) => {
-      const element = document.querySelector(selector)!;
-
-      acc[name] = element;
-
+      const element = document.querySelector(selector);
+      if (element) {
+        acc[name] = element;
+      }
       return acc;
     }, {} as IElementsMap);
   };
