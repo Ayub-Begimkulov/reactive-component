@@ -1,16 +1,6 @@
 import { observable, observe } from "./observable";
 import { component, onBeforeDestroy } from "./component";
 
-interface IState {
-  user: {
-    name: string;
-    age: number;
-  };
-  counter: {
-    value: number;
-  };
-}
-
 const useCounter = (el: Element) => {
   // would be better to make ref
   const counter = observable({
@@ -30,7 +20,7 @@ const useCounter = (el: Element) => {
   return { counter, increment };
 };
 
-const app = component<IState>({
+const app = component({
   root: "#app",
   elements: {
     input: "#input",

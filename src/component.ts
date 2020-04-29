@@ -1,11 +1,10 @@
-import { makeAddListener, error } from "./utils";
+import { makeAddListener, error, isFunction } from "./utils";
 
 interface IComponentProps<T> {
   root: Element | string;
   elements?: Record<string, string>;
   events?: Record<string, string>;
   setup: ({ elements }: { elements: IElementsMap }) => T;
-  [key: string]: any;
 }
 
 interface IElementsMap {
@@ -19,7 +18,7 @@ export const onBeforeDestroy = (callback: Function) => {
   (destroyHooks || (destroyHooks = new Set())).add(callback);
 };
 
-export const component = <T>({
+export const component = <T extends Record<string, any>>({
   root,
   elements: elementsSelectors = {},
   events = {},
@@ -52,7 +51,7 @@ export const component = <T>({
         }
         return acc;
       },
-      { root } as IElementsMap
+      { rootElement } as IElementsMap
     );
   };
 
@@ -67,10 +66,10 @@ export const component = <T>({
             `can not set ${event} event on ${element}. ${element} is undefined`
           );
         }
-        // @ts-ignore
+
         const listener = state[value];
 
-        if (!listener || typeof listener !== "function") {
+        if (!listener || !isFunction(listener)) {
           error(`value is not a valid listener.`);
         }
         addListener(elements[element], event, listener);

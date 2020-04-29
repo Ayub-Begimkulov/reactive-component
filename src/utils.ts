@@ -31,6 +31,10 @@ export const isObject = (val: any): val is object => {
   return val !== null && typeof val === "object";
 };
 
+export const isFunction = (val: any): val is Function => {
+  return typeof val === "function";
+};
+
 export const error = (message: string) => {
   if (process.env.NODE_ENV === "production") {
     console.error(message);
