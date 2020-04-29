@@ -1,5 +1,5 @@
 import { observable, observe } from "./observable";
-import { component } from "./component";
+import { component, onBeforeDestroy } from "./component";
 
 interface IState {
   user: {
@@ -21,7 +21,13 @@ const useCounter = (el: Element) => {
     el.textContent = "" + counter.value;
   });
 
-  return counter;
+  const increment = () => counter.value++;
+
+  onBeforeDestroy(() => {
+    console.log("here");
+  });
+
+  return { counter, increment };
 };
 
 const app = component<IState>({
@@ -34,44 +40,30 @@ const app = component<IState>({
   },
   // aka vue composition api)
   setup({ elements }) {
+    const { count } = elements;
+
     const user = observable({
       name: "hello",
       age: 16
     });
 
-    const { count } = elements;
+    const { counter, increment } = useCounter(count);
 
-    const counter = useCounter(count);
+    const onInput = (e: Event) => {
+      const value = (e.target as HTMLInputElement).value;
+      user.name = value;
+    };
 
     observe(() => {
       // @TODO make a reactions resetting for nested objects
       console.log(user.name);
     });
 
-    return { user, counter };
-  },
-  beforeDestroy({ elements, state }) {
-    console.log(state, elements);
+    return { user, counter, increment, onInput };
   },
   events: {
-    // also it's may be better to declare event handlers
-    // in setup function and use event object as a map
-    // with same key but with value as method name
-    // setup({elements}) {
-    //   const onClick = () => {...}
-    //   return {..., onClick}
-    // },
-    // ...
-    // events: {
-    //   "click on div": "onClick"
-    // }
-    "input on input"(e, state) {
-      const value = (e.target as HTMLInputElement).value;
-      state.user.name = value;
-    },
-    "click on button"(_e, state) {
-      state.counter.value++;
-    }
+    "input on input": "onInput",
+    "click on button": "increment"
   }
 });
 

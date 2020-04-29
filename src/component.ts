@@ -2,9 +2,8 @@ import { makeAddListener, error } from "./utils";
 
 interface IComponentProps<T> {
   root: Element | string;
-  elements: Record<string, string>;
-  beforeDestroy?: LifeCycleMethod<T>;
-  events: Record<string, (e: Event, state: T) => void>;
+  elements?: Record<string, string>;
+  events?: Record<string, string>;
   setup: ({ elements }: { elements: IElementsMap }) => T;
   [key: string]: any;
 }
@@ -13,21 +12,17 @@ interface IElementsMap {
   [key: string]: Element;
 }
 
-type LifeCycleMethod<T> = ({
-  state,
-  elements
-}: {
-  state: T;
-  elements: Record<string, Element>;
-}) => void;
-
+let destroyHooks: Set<Function> | null;
 const eventRegex = /(\w+)\s+on\s+(\w+)/;
+
+export const onBeforeDestroy = (callback: Function) => {
+  (destroyHooks || (destroyHooks = new Set())).add(callback);
+};
 
 export const component = <T>({
   root,
-  elements: elementsSelectors,
-  beforeDestroy,
-  events,
+  elements: elementsSelectors = {},
+  events = {},
   setup
 }: IComponentProps<T>) => {
   const [addListener, removeAllListeners] = makeAddListener();
@@ -72,13 +67,19 @@ export const component = <T>({
             `can not set ${event} event on ${element}. ${element} is undefined`
           );
         }
-        addListener(elements[element], event, e => value(e, state));
+        // @ts-ignore
+        const listener = state[value];
+
+        if (!listener || typeof listener !== "function") {
+          error(`value is not a valid listener.`);
+        }
+        addListener(elements[element], event, listener);
       }
     });
   };
 
   const destroy = () => {
-    beforeDestroy && beforeDestroy({ state, elements });
+    destroyHooks?.forEach(cb => cb());
     removeAllListeners();
   };
 
