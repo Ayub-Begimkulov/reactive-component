@@ -1,14 +1,20 @@
 type Cleanup = () => void;
-type AddListener = (
+export type AddListenerFunction = (
   el: Element,
   event: string,
   listener: EventListenerOrEventListenerObject
-) => Cleanup;
+) => () => void;
+
+export type RemoveAllListenersFunction = () => void;
 
 export const makeAddListener = () => {
   const cleanups = new Set<Cleanup>();
 
-  const addListener: AddListener = (el, event, listener) => {
+  const addListener = (
+    el: Element,
+    event: string,
+    listener: EventListenerOrEventListenerObject
+  ) => {
     el.addEventListener(event, listener);
 
     const cleanup = () => {
@@ -24,7 +30,10 @@ export const makeAddListener = () => {
     cleanups.forEach(fn => fn());
   };
 
-  return [addListener, removeAllListeners] as [AddListener, Cleanup];
+  return [addListener, removeAllListeners] as [
+    AddListenerFunction,
+    RemoveAllListenersFunction
+  ];
 };
 
 export const isObject = (val: any): val is object => {
