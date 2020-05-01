@@ -1,5 +1,5 @@
 import { observable, observe } from "./observable";
-import { component, onBeforeDestroy } from "./component";
+import { Component, onBeforeDestroy } from "./component";
 
 const useCounter = (el: Element) => {
   // would be better to make ref
@@ -20,7 +20,7 @@ const useCounter = (el: Element) => {
   return { counter, increment };
 };
 
-const app = component({
+const app = new Component({
   root: "#app",
   elements: {
     input: "#input",
@@ -57,4 +57,5 @@ const app = component({
   }
 });
 
-console.log(app);
+// @ts-ignore
+window.app = app;
