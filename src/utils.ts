@@ -44,6 +44,9 @@ export const isFunction = (val: any): val is Function => {
   return typeof val === "function";
 };
 
+export const hasChanged = (value: any, oldValue: any): boolean =>
+  value !== oldValue && (value === value || oldValue === oldValue);
+
 export const error = (message: string) => {
   if (process.env.NODE_ENV === "production") {
     console.error(message);

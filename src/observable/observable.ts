@@ -1,5 +1,5 @@
 import { runningReactions } from "./observer";
-import { isObject } from "../utils";
+import { isObject, hasChanged } from "../utils";
 
 type AnyObject = Record<string, any>;
 
@@ -34,12 +34,21 @@ const addPropertyToObservable = <T extends AnyObject, K>(
     get() {
       const currentlyRunningReaction =
         runningReactions[runningReactions.length - 1];
-      currentlyRunningReaction && reactions.add(currentlyRunningReaction);
+
+      if (
+        currentlyRunningReaction &&
+        !reactions.has(currentlyRunningReaction)
+      ) {
+        reactions.add(currentlyRunningReaction);
+      }
+
       return isObject(currentValue) ? observable(currentValue) : currentValue;
     },
     set(newValue) {
-      currentValue = newValue;
-      reactions.forEach(reaction => reaction());
+      if (hasChanged(currentValue, newValue)) {
+        currentValue = newValue;
+        reactions.forEach(reaction => reaction());
+      }
     }
   });
 
