@@ -4,18 +4,18 @@ describe("observable util", () => {
   it("runs reaction when data changes", () => {
     let dummy;
     const obj = observable({ a: 0 });
-    const reaction = jest.fn(() => (dummy = obj.a));
+    const spy = jest.fn(() => (dummy = obj.a));
 
-    observe(reaction);
+    observe(spy);
 
-    expect(reaction).toBeCalledTimes(1);
+    expect(spy).toBeCalledTimes(1);
     expect(dummy).toBe(0);
 
     for (let i = 0; i < 10; i++) {
       obj.a++;
     }
 
-    expect(reaction).toBeCalledTimes(11);
+    expect(spy).toBeCalledTimes(11);
     expect(dummy).toBe(10);
   });
 
@@ -55,26 +55,31 @@ describe("observable util", () => {
   it("observes nested objects", () => {
     let dummy;
     const obj = observable({ nested: { a: 0 } });
-    const reaction = jest.fn(() => (dummy = obj.nested.a));
+    const spy = jest.fn(() => (dummy = obj.nested.a));
 
-    observe(reaction);
+    observe(spy);
 
-    expect(reaction).toBeCalledTimes(1);
     expect(dummy).toBe(0);
+    expect(spy).toBeCalledTimes(1);
 
     obj.nested.a = 5;
 
-    expect(reaction).toBeCalledTimes(2);
     expect(dummy).toBe(5);
+    expect(spy).toBeCalledTimes(2);
+
+    obj.nested = {
+      a: 3
+    };
+
+    expect(dummy).toBe(3);
+    expect(spy).toBeCalledTimes(3);
   });
 
   it("observes function chain calls", () => {
     let dummy;
     const obj = observable({ a: 0 });
 
-    const getDummy = () => {
-      return obj.a;
-    };
+    const getDummy = () => obj.a;
 
     observe(() => {
       dummy = getDummy();
@@ -90,54 +95,118 @@ describe("observable util", () => {
   it("avoids implicit infinite recursive loops with itself", () => {
     const obj = observable({ a: 0 });
 
-    const reaction = jest.fn(() => obj.a++);
-    observe(reaction);
+    const spy = jest.fn(() => obj.a++);
+    observe(spy);
 
     expect(obj.a).toBe(1);
-    expect(reaction).toBeCalledTimes(1);
+    expect(spy).toBeCalledTimes(1);
 
     obj.a = 4;
     expect(obj.a).toBe(5);
-    expect(reaction).toBeCalledTimes(2);
+    expect(spy).toBeCalledTimes(2);
   });
 
   it("avoids infinite loops with other reactions", () => {
-    const nums = observable({ num1: 0, num2: 1 });
+    const obj = observable({ num1: 0, num2: 1 });
 
-    const spy1 = jest.fn(() => (nums.num1 = nums.num2));
-    const spy2 = jest.fn(() => (nums.num2 = nums.num1));
+    const spy1 = jest.fn(() => (obj.num1 = obj.num2));
+    const spy2 = jest.fn(() => (obj.num2 = obj.num1));
 
     observe(spy1);
     observe(spy2);
 
-    expect(nums.num1).toBe(1);
-    expect(nums.num2).toBe(1);
+    expect(obj.num1).toBe(1);
+    expect(obj.num2).toBe(1);
 
     expect(spy1).toBeCalledTimes(1);
     expect(spy2).toBeCalledTimes(1);
 
-    nums.num2 = 4;
+    obj.num2 = 4;
 
-    expect(nums.num1).toBe(4);
-    expect(nums.num2).toBe(4);
+    expect(obj.num1).toBe(4);
+    expect(obj.num2).toBe(4);
 
     expect(spy1).toBeCalledTimes(2);
     expect(spy2).toBeCalledTimes(2);
 
-    nums.num1 = 10;
+    obj.num1 = 10;
 
-    expect(nums.num1).toBe(10);
-    expect(nums.num2).toBe(10);
+    expect(obj.num1).toBe(10);
+    expect(obj.num2).toBe(10);
 
     expect(spy1).toBeCalledTimes(3);
     expect(spy2).toBeCalledTimes(3);
   });
 
-  it.todo("discovers new branches while running automatically");
-  it.todo(
-    "not triggered by mutating a property, which is used in an inactive branch"
-  );
-  it.todo("should not run multiple times for a single mutation");
+  it("discovers new branches while running automatically", () => {
+    const obj = observable({ a: 0, b: 0 });
+
+    const spy1 = jest.fn();
+    const spy2 = jest.fn();
+
+    observe(() => {
+      if (obj.a < 2) {
+        spy1();
+      } else if (obj.b >= 0) {
+        spy2();
+      }
+    });
+
+    expect(spy1).toBeCalledTimes(1);
+    expect(spy2).toBeCalledTimes(0);
+
+    obj.a = 2;
+
+    expect(spy1).toBeCalledTimes(1);
+    expect(spy2).toBeCalledTimes(1);
+
+    obj.b = 5;
+
+    expect(spy1).toBeCalledTimes(1);
+    expect(spy2).toBeCalledTimes(2);
+  });
+
+  it("not triggered by mutating a property, which is used in an inactive branch", () => {
+    let dummy;
+    const obj = observable({ prop: "value", run: true });
+
+    const conditionalSpy = jest.fn(() => {
+      dummy = obj.run ? obj.prop : "other";
+    });
+    observe(conditionalSpy);
+
+    expect(dummy).toBe("value");
+    expect(conditionalSpy).toBeCalledTimes(1);
+    obj.run = false;
+    expect(dummy).toBe("other");
+    expect(conditionalSpy).toBeCalledTimes(2);
+    obj.prop = "value2";
+    expect(dummy).toBe("other");
+    expect(conditionalSpy).toBeCalledTimes(2);
+  });
+
+  it("should not run if the value didn't change", () => {
+    let dummy;
+    const obj = observable({ a: 0 });
+
+    const spy = jest.fn(() => {
+      dummy = obj.a;
+    });
+    observe(spy);
+
+    expect(dummy).toBe(0);
+    expect(spy).toBeCalledTimes(1);
+
+    obj.a = 2;
+
+    expect(dummy).toBe(2);
+    expect(spy).toBeCalledTimes(2);
+
+    obj.a = 2;
+
+    expect(dummy).toBe(2);
+    expect(spy).toBeCalledTimes(2);
+  });
 
   it.todo("should allow nested reactions");
 });
