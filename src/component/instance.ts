@@ -1,41 +1,32 @@
-import {
-  makeAddListener,
-  error,
-  isFunction,
-  AddListenerFunction,
-  RemoveAllListenersFunction
-} from "../utils";
-import { setCurrentInstance, BEFORE_DESTROY } from "./life-cycle";
+import { BEFORE_DESTROY } from "./life-cycle";
+import { AnyObject } from "../types";
 
-interface IComponentProps<T> {
+interface IComponentOptions<T> {
   root: Element | string;
   elements?: Record<string, string>;
-  events?: Record<string, string>;
-  setup: ({ elements }: { elements: IElementsMap }) => T;
+  setup: SetUpFunction<T>;
 }
+
+type SetUpFunction<T> = (ctx: { elements: IElementsMap }) => T;
 
 interface IElementsMap {
   [key: string]: Element;
 }
 
-const eventRegex = /(\w+)\s+on\s+(\w+)/;
+export let currentInstance: Component<any> | null = null;
 
-export class Component<T extends Record<string, any>> {
+export const setCurrentInstance = (instance: Component<any> | null) => {
+  currentInstance = instance;
+};
+
+export class Component<T extends AnyObject> {
   root: Element;
   state?: T;
-  setup: ({ elements }: { elements: IElementsMap }) => T;
+  setup: SetUpFunction<T>;
   hooks = new Map<string, Set<Function>>();
-  events: Record<string, string>;
   elementsSelectors: Record<string, string>;
-  listen?: AddListenerFunction;
-  removeAllListeners?: RemoveAllListenersFunction;
 
-  constructor({
-    root,
-    setup,
-    events = {},
-    elements: elementsSelectors = {}
-  }: IComponentProps<T>) {
+  constructor({ root, setup, elements = {} }: IComponentOptions<T>) {
     const rootElement =
       typeof root === "string" ? document.querySelector(root) : root;
 
@@ -45,15 +36,9 @@ export class Component<T extends Record<string, any>> {
       );
     }
 
-    const [listen, removeAllListeners] = makeAddListener();
-
-    this.listen = listen;
-    this.removeAllListeners = removeAllListeners;
-
     this.root = rootElement;
     this.setup = setup;
-    this.events = events;
-    this.elementsSelectors = elementsSelectors;
+    this.elementsSelectors = elements;
 
     this.init();
   }
@@ -63,7 +48,6 @@ export class Component<T extends Record<string, any>> {
     const { setup } = this;
     const elements = this.getElements();
     this.state = setup({ elements });
-    this.attachEvents(this.state, elements);
     setCurrentInstance(null);
   }
 
@@ -82,33 +66,8 @@ export class Component<T extends Record<string, any>> {
     );
   }
 
-  attachEvents(state: T, elements: IElementsMap) {
-    const { events } = this;
-
-    Object.entries(events).forEach(([key, value]) => {
-      const eventHandlerMatch = key.match(eventRegex);
-      if (eventHandlerMatch) {
-        const [, event, element] = eventHandlerMatch;
-
-        if (!elements[element]) {
-          error(
-            `can not set ${event} event on ${element}. ${element} is undefined`
-          );
-        }
-
-        const listener = state[value];
-
-        if (!listener || !isFunction(listener)) {
-          error(`value is not a valid listener.`);
-        }
-
-        this.listen?.(elements[element], event, listener);
-      }
-    });
-  }
-
   destroy() {
     this.hooks.get(BEFORE_DESTROY)?.forEach(fn => fn());
-    this.removeAllListeners?.();
+    this.hooks.clear();
   }
 }

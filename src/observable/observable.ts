@@ -1,7 +1,7 @@
 import { runningReactions } from "./observer";
 import { addReaction, runReactions, storeObservable } from "./store";
 import { isObject, hasChanged } from "../utils";
-import { AnyObject } from "./types";
+import { AnyObject } from "../types";
 
 const rawToProxy = new WeakMap<AnyObject, AnyObject>();
 const proxyToRaw = new WeakMap<AnyObject, AnyObject>();

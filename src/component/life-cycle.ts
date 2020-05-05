@@ -1,12 +1,6 @@
-import type { Component } from "./instance";
+import { currentInstance } from "./instance";
 
 export const BEFORE_DESTROY = "before-destroy";
-
-let currentInstance: Component<any> | null = null;
-
-export const setCurrentInstance = (instance: Component<any> | null) => {
-  currentInstance = instance;
-};
 
 const makeLifeCycleHook = (type: string) => (callback: Function) => {
   if (currentInstance) {

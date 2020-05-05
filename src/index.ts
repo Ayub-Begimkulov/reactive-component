@@ -1,23 +1,38 @@
 import { observable, observe } from "./observable";
 import { Component, onBeforeDestroy } from "./component";
+import { makeAddListener } from "./utils";
+import { showIf, dynamicClasses } from "./component";
 
-const useCounter = (el: Element) => {
-  // would be better to make ref
+const useCounter = ({
+  count,
+  incrementButton,
+  decrementButton
+}: Record<string, Element>) => {
+  const [addListener, removeAllListeners] = makeAddListener();
   const counter = observable({
     value: 0
   });
 
   observe(() => {
-    el.textContent = "" + counter.value;
+    count.textContent = "" + counter.value;
+  });
+
+  dynamicClasses(count, {
+    zero: () => counter.value === 0,
+    negative: () => counter.value < 0,
+    positive: () => counter.value > 0
   });
 
   const increment = () => counter.value++;
+  const decrement = () => counter.value--;
+  const isPositive = () => counter.value > 0;
 
-  onBeforeDestroy(() => {
-    console.log("here");
-  });
+  addListener(incrementButton, "click", increment);
+  addListener(decrementButton, "click", decrement);
 
-  return { counter, increment };
+  showIf(decrementButton as HTMLElement, isPositive);
+
+  onBeforeDestroy(removeAllListeners);
 };
 
 const app = new Component({
@@ -25,35 +40,31 @@ const app = new Component({
   elements: {
     input: "#input",
     text: "#text",
-    button: "#btn",
+    incrementButton: "#inc-btn",
+    decrementButton: "#dec-btn",
     count: "#count"
   },
-  // aka vue composition api)
   setup({ elements }) {
-    const { count } = elements;
+    const { input } = elements;
+    const [addListener, removeAllListeners] = makeAddListener();
 
     const user = observable({
       name: "hello",
       age: 16
     });
 
-    const { counter, increment } = useCounter(count);
+    useCounter(elements);
 
     const onInput = (e: Event) => {
       const value = (e.target as HTMLInputElement).value;
       user.name = value;
     };
 
-    observe(() => {
-      // @TODO make a reactions resetting for nested objects
-      console.log(user.name);
-    });
+    addListener(input, "input", onInput);
 
-    return { user, counter, increment, onInput };
-  },
-  events: {
-    "input on input": "onInput",
-    "click on button": "increment"
+    onBeforeDestroy(removeAllListeners);
+
+    return { user, onInput };
   }
 });
 
