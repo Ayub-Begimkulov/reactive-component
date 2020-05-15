@@ -1,18 +1,27 @@
-export type Reaction = {
+export interface Reaction {
   (): any;
   __isReaction: boolean;
   isRunning: boolean;
+  options: ReactionOptions;
   deps: Set<Reaction>[];
-};
+}
+
+interface ReactionOptions {
+  lazy?: boolean;
+  scheduler?: (fn: Reaction) => any;
+}
 
 export const runningReactions: Reaction[] = [];
 
-export const observe = (fn: Function) => {
+export const observe = (fn: Function, options: ReactionOptions = {}) => {
   const reaction = isReaction(fn) ? fn : makeReaction(fn);
 
   reaction.__isReaction = true;
+  reaction.options = options;
 
-  reaction();
+  if (!options.lazy) {
+    reaction();
+  }
 
   return reaction;
 };

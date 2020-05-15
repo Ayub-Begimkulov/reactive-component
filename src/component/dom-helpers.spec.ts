@@ -1,4 +1,4 @@
-import { renderIf, showIf } from "./dom-helpers";
+import { renderIf, showIf, nextTick } from "./dom-helpers";
 import { observable } from "../observable";
 
 beforeEach(() => {
@@ -28,7 +28,7 @@ describe("renderIf helper", () => {
     expect(document.body.innerHTML).not.toContain("<!---->");
   });
 
-  it("updates if observable state changes", () => {
+  it("updates if observable state changes", async () => {
     const div = document.querySelector("div")!;
 
     const state = observable<Record<string, any>>({ renderDiv: false });
@@ -40,13 +40,15 @@ describe("renderIf helper", () => {
 
     state.renderDiv = true;
 
+    await nextTick();
+
     expect(document.contains(div)).toBe(true);
     expect(document.body.innerHTML).not.toContain("<!---->");
   });
 });
 
 describe("showIf helper", () => {
-  it("adds `display: none` if return value is falsy", () => {
+  it("adds `display: none` if return value is falsy", async () => {
     const div = document.querySelector("div")!;
 
     showIf(div, () => false);
@@ -54,7 +56,7 @@ describe("showIf helper", () => {
     expect(div.style.display).toBe("none");
   });
 
-  it("doesn't add `display: none` if value is truthy", () => {
+  it("doesn't add `display: none` if value is truthy", async () => {
     const div = document.querySelector("div")!;
 
     showIf(div, () => true);
@@ -62,7 +64,7 @@ describe("showIf helper", () => {
     expect(div.style.display).toBe("");
   });
 
-  it("updates when observable state changes", () => {
+  it("updates when observable state changes", async () => {
     const div = document.querySelector("div")!;
 
     const state = observable({ showDiv: true });
@@ -73,10 +75,12 @@ describe("showIf helper", () => {
 
     state.showDiv = false;
 
+    await nextTick();
+
     expect(div.style.display).toBe("none");
   });
 
-  it("respects initial display value", () => {
+  it("respects initial display value", async () => {
     const div = document.querySelector("div")!;
     div.style.display = "flex";
 
@@ -87,6 +91,8 @@ describe("showIf helper", () => {
     expect(div.style.display).toBe("none");
 
     state.showDiv = true;
+
+    await nextTick();
 
     expect(div.style.display).toBe("flex");
   });

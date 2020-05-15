@@ -1,5 +1,35 @@
 import { observe } from "../observable";
 import { replaceNode } from "../utils";
+import { onBeforeDestroy } from "./life-cycle";
+
+const jobs: Set<any> = new Set();
+const promise = Promise.resolve();
+let isRunning = false;
+
+export const nextTick = (fn?: () => void) => (fn ? promise.then(fn) : promise);
+
+const queueJob = (job: any) => {
+  jobs.add(job);
+  runJobs();
+};
+
+const runJobs = () => {
+  if (!isRunning) {
+    isRunning = true;
+    nextTick(() => {
+      jobs.forEach(job => {
+        job();
+      });
+      isRunning = false;
+    });
+  }
+};
+
+const watchEffect = (cb: Function) => {
+  observe(cb, {
+    scheduler: queueJob,
+  });
+};
 
 export const renderIf = (
   el: Element,
@@ -7,7 +37,7 @@ export const renderIf = (
 ) => {
   const comment = document.createComment("");
 
-  observe(() => {
+  watchEffect(() => {
     const showElement = condition();
 
     if (showElement) {
@@ -25,9 +55,9 @@ export const showIf = (
   condition: (...args: any[]) => boolean
 ) => {
   const initialDisplay = el.style.display;
-  observe(() => {
-    const showElement = condition();
 
+  watchEffect(() => {
+    const showElement = condition();
     el.style.display = showElement ? initialDisplay : "none";
   });
 };
@@ -37,10 +67,24 @@ export const dynamicClasses = (
   classMap: Record<string, () => boolean>
 ) => {
   Object.entries(classMap).forEach(([className, condition]) => {
-    observe(() => {
+    watchEffect(() => {
       condition()
         ? el.classList.add(className)
         : el.classList.remove(className);
     });
   });
+};
+
+export const listen = (
+  el: EventTarget,
+  event: string,
+  listener: EventListenerOrEventListenerObject
+) => {
+  el.addEventListener(event, listener);
+
+  const remove = () => el.removeEventListener(event, listener);
+
+  onBeforeDestroy(remove);
+
+  return remove;
 };
