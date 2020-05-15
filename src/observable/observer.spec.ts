@@ -68,7 +68,7 @@ describe("observable util", () => {
     expect(spy).toBeCalledTimes(2);
 
     obj.nested = {
-      a: 3
+      a: 3,
     };
 
     expect(dummy).toBe(3);

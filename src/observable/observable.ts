@@ -1,5 +1,4 @@
-import { runningReactions } from "./observer";
-import { addReaction, runReactions, storeObservable } from "./store";
+import { runningReactions, Reaction } from "./observer";
 import { isObject, hasChanged } from "../utils";
 import { AnyObject } from "../types";
 
@@ -19,8 +18,6 @@ const createObservable = <T extends AnyObject>(target: T) => {
   rawToProxy.set(target, observable);
   proxyToRaw.set(observable, target);
 
-  storeObservable(observable);
-
   return observable;
 };
 
@@ -30,14 +27,18 @@ const addPropertyToObservable = <T extends AnyObject, K>(
   value: K
 ) => {
   let currentValue = value;
-
+  const reactions = new Set<Reaction>();
   Object.defineProperty(target, key, {
     get() {
       const currentlyRunningReaction =
         runningReactions[runningReactions.length - 1];
 
-      if (currentlyRunningReaction) {
-        addReaction(target, key, currentlyRunningReaction);
+      if (
+        currentlyRunningReaction &&
+        !reactions.has(currentlyRunningReaction)
+      ) {
+        reactions.add(currentlyRunningReaction);
+        currentlyRunningReaction.deps.push(reactions);
       }
 
       return isObject(currentValue) ? observable(currentValue) : currentValue;
@@ -45,7 +46,16 @@ const addPropertyToObservable = <T extends AnyObject, K>(
     set(newValue) {
       if (hasChanged(currentValue, newValue)) {
         currentValue = newValue;
-        runReactions(target, key);
+        // make a copy of reactions to not end up in an infinite loop
+        const reactionsToRun = new Set<Reaction>();
+        reactions.forEach(reactionsToRun.add, reactionsToRun);
+        reactionsToRun.forEach(reaction => {
+          if (reaction.options.scheduler) {
+            reaction.options.scheduler(reaction);
+          } else {
+            reaction();
+          }
+        });
       }
     }
   });
