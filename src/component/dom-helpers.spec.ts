@@ -1,5 +1,6 @@
-import { renderIf, showIf, nextTick } from "./dom-helpers";
+import { renderIf, showIf } from "./dom-helpers";
 import { observable } from "../observable";
+import { nextTick } from "./scheduler";
 
 beforeEach(() => {
   document.body.innerHTML = `<div></div>`;

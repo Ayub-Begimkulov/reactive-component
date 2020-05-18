@@ -1,9 +1,4 @@
 export { Component } from "./instance";
 export { onBeforeDestroy } from "./life-cycle";
-export {
-  showIf,
-  dynamicClasses,
-  renderIf,
-  listen,
-  watchEffect,
-} from "./dom-helpers";
+export { watchEffect } from "./watch";
+export { showIf, dynamicClasses, renderIf, listen } from "./dom-helpers";

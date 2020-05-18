@@ -1,35 +1,6 @@
-import { observe } from "../observable";
 import { replaceNode } from "../utils";
 import { onBeforeDestroy } from "./life-cycle";
-
-const jobs: Set<any> = new Set();
-const promise = Promise.resolve();
-let isRunning = false;
-
-export const nextTick = (fn?: () => void) => (fn ? promise.then(fn) : promise);
-
-const queueJob = (job: any) => {
-  jobs.add(job);
-  runJobs();
-};
-
-const runJobs = () => {
-  if (!isRunning) {
-    isRunning = true;
-    nextTick(() => {
-      jobs.forEach(job => {
-        job();
-      });
-      isRunning = false;
-    });
-  }
-};
-
-export const watchEffect = (cb: Function) => {
-  observe(cb, {
-    scheduler: queueJob,
-  });
-};
+import { watchEffect } from "./watch";
 
 export const renderIf = (
   el: Element,
