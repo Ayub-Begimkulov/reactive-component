@@ -57,7 +57,7 @@ const addPropertyToObservable = <T extends AnyObject, K>(
           }
         });
       }
-    }
+    },
   });
 
   return target;

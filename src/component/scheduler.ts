@@ -1,20 +1,28 @@
-const jobs: Set<() => void> = new Set();
+const jobs: (() => void)[] = [];
 const promise = Promise.resolve();
-let isRunning = false;
+let pending = false;
 
 export const nextTick = (fn?: () => void) => (fn ? promise.then(fn) : promise);
 
 export const queueJob = (job: () => void) => {
-  jobs.add(job);
-  runJobs();
+  jobs.push(job);
+  queueFlush();
 };
 
-const runJobs = () => {
-  if (!isRunning) {
-    isRunning = true;
-    nextTick(() => {
-      jobs.forEach(job => job());
-      isRunning = false;
-    });
+const queueFlush = () => {
+  if (!pending) {
+    pending = true;
+    nextTick(flushJobs);
   }
+};
+
+const flushJobs = () => {
+  const jobsToRun = new Set<() => void>();
+  jobs.forEach(jobsToRun.add, jobsToRun);
+  jobs.length = 0;
+  jobsToRun.forEach(job => job());
+  if (jobs.length > 0) {
+    flushJobs();
+  }
+  pending = false;
 };

@@ -13,9 +13,7 @@ interface IElementsMap {
   [key: string]: Element;
 }
 
-let currentInstance: Component<any> | null = null;
-
-export const getCurrentInstance = () => currentInstance;
+export let currentInstance: Component<any> | null = null;
 
 export const setCurrentInstance = (instance: Component<any> | null) => {
   currentInstance = instance;
