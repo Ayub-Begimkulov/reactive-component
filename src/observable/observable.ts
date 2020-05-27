@@ -1,5 +1,5 @@
 import { runningReactions, Reaction } from "./observer";
-import { isObject, hasChanged } from "../utils";
+import { isObject, hasChanged, makeSet } from "../utils";
 import { AnyObject } from "../types";
 
 const rawToProxy = new WeakMap<AnyObject, AnyObject>();
@@ -47,8 +47,7 @@ const addPropertyToObservable = <T extends AnyObject, K>(
       if (hasChanged(currentValue, newValue)) {
         currentValue = newValue;
         // make a copy of reactions to not end up in an infinite loop
-        const reactionsToRun = new Set<Reaction>();
-        reactions.forEach(reactionsToRun.add, reactionsToRun);
+        const reactionsToRun = makeSet(reactions);
         reactionsToRun.forEach(reaction => {
           if (reaction.options.scheduler) {
             reaction.options.scheduler(reaction);

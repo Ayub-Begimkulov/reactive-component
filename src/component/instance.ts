@@ -1,17 +1,14 @@
 import { BEFORE_DESTROY } from "./life-cycle";
 import { AnyObject } from "../types";
 
-interface IComponentOptions<T> {
+interface ComponentOptions<T> {
   root: Element | string;
   elements?: Record<string, string>;
   setup: SetUpFunction<T>;
 }
 
-type SetUpFunction<T> = (ctx: { elements: IElementsMap }) => T;
-
-interface IElementsMap {
-  [key: string]: Element;
-}
+type ElementsMap = Record<string, Element>;
+type SetUpFunction<T> = (ctx: { elements: ElementsMap }) => T;
 
 export let currentInstance: Component<any> | null = null;
 
@@ -26,7 +23,7 @@ export class Component<T extends AnyObject> {
   hooks = new Map<string, Set<Function>>();
   elementsSelectors: Record<string, string>;
 
-  constructor({ root, setup, elements = {} }: IComponentOptions<T>) {
+  constructor({ root, setup, elements = {} }: ComponentOptions<T>) {
     const rootElement =
       typeof root === "string" ? document.querySelector(root) : root;
 
@@ -62,7 +59,7 @@ export class Component<T extends AnyObject> {
         }
         return acc;
       },
-      { root } as IElementsMap
+      { root } as ElementsMap
     );
   }
 

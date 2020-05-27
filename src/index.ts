@@ -40,7 +40,7 @@ new Component({
     decrementButton: "#dec-btn",
     count: "#count",
   },
-  setup({ elements }: { elements: Record<string, Element> }) {
+  setup({ elements }) {
     const { input } = elements;
 
     const user = observable({

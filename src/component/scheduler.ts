@@ -1,3 +1,5 @@
+import { makeSet } from "../utils";
+
 const jobs: (() => void)[] = [];
 const promise = Promise.resolve();
 let pending = false;
@@ -17,8 +19,7 @@ const queueFlush = () => {
 };
 
 const flushJobs = () => {
-  const jobsToRun = new Set<() => void>();
-  jobs.forEach(jobsToRun.add, jobsToRun);
+  const jobsToRun = makeSet(jobs);
   jobs.length = 0;
   jobsToRun.forEach(job => job());
   if (jobs.length > 0) {
