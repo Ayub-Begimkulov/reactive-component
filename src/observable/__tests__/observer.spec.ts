@@ -1,4 +1,4 @@
-import { observable, observe } from ".";
+import { observable, observe } from "..";
 
 describe("observable util", () => {
   it("runs reaction when data changes", () => {

@@ -31,12 +31,15 @@ const makeReaction = (fn: Function) => {
     // using isRunning instead of runningReactions.include
     // for a O(1) look up
     if (!reaction.isRunning) {
-      cleanUpDeps(reaction);
-      reaction.isRunning = true;
-      runningReactions.push(reaction);
-      fn();
-      runningReactions.pop();
-      reaction.isRunning = false;
+      try {
+        cleanUpDeps(reaction);
+        reaction.isRunning = true;
+        runningReactions.push(reaction);
+        return fn();
+      } finally {
+        runningReactions.pop();
+        reaction.isRunning = false;
+      }
     }
   }) as Reaction;
 

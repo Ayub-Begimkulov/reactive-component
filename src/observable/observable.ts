@@ -1,6 +1,6 @@
-import { runningReactions, Reaction } from "./observer";
-import { isObject, hasChanged, makeSet } from "../utils";
+import { isObject, hasChanged } from "../utils";
 import { AnyObject } from "../types";
+import { addReaction, runReactions, storeObservable } from "./store";
 
 const rawToProxy = new WeakMap<AnyObject, AnyObject>();
 const proxyToRaw = new WeakMap<AnyObject, AnyObject>();
@@ -15,6 +15,8 @@ const createObservable = <T extends AnyObject>(target: T) => {
     return addPropertyToObservable(result, key, value);
   }, {} as T);
 
+  storeObservable(observable);
+
   rawToProxy.set(target, observable);
   proxyToRaw.set(observable, target);
 
@@ -27,34 +29,15 @@ const addPropertyToObservable = <T extends AnyObject, K>(
   value: K
 ) => {
   let currentValue = value;
-  const reactions = new Set<Reaction>();
   Object.defineProperty(target, key, {
     get() {
-      const currentlyRunningReaction =
-        runningReactions[runningReactions.length - 1];
-
-      if (
-        currentlyRunningReaction &&
-        !reactions.has(currentlyRunningReaction)
-      ) {
-        reactions.add(currentlyRunningReaction);
-        currentlyRunningReaction.deps.push(reactions);
-      }
-
+      addReaction(target, key);
       return isObject(currentValue) ? observable(currentValue) : currentValue;
     },
     set(newValue) {
       if (hasChanged(currentValue, newValue)) {
         currentValue = newValue;
-        // make a copy of reactions to not end up in an infinite loop
-        const reactionsToRun = makeSet(reactions);
-        reactionsToRun.forEach(reaction => {
-          if (reaction.options.scheduler) {
-            reaction.options.scheduler(reaction);
-          } else {
-            reaction();
-          }
-        });
+        runReactions(target, key);
       }
     },
   });
