@@ -64,7 +64,7 @@ export class Component<T extends AnyObject> {
   }
 
   destroy() {
-    this.hooks.get(BEFORE_DESTROY)?.forEach(fn => fn());
+    this.hooks.get(BEFORE_DESTROY)?.forEach((fn) => fn());
     this.hooks.clear();
   }
 }
