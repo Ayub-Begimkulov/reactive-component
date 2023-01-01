@@ -13,13 +13,13 @@
   "devDependencies": {
     "@types/jest": "^25.2.1",
     "@types/lodash": "^4.14.150",
-    "html-webpack-plugin": "^4.2.0",
+    "html-webpack-plugin": "^5.5.0",
     "jest": "^25.5.3",
     "ts-jest": "^25.4.0",
-    "ts-loader": "^7.0.1",
+    "ts-loader": "^9.4.2",
     "typescript": "^3.8.3",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
